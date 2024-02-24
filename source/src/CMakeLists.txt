@@ -137,7 +137,7 @@ set(SRC ${SRC}
         ${CMAKE_CURRENT_SOURCE_DIR}/patch/patch-spec.cpp
         )
 
-if (NOT DEFINED NO_RAVE)
+if (NOT DEFINED NO_ML)
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/node/ml/Rave")
 endif ()
 

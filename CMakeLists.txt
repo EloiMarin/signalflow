@@ -201,7 +201,7 @@ else()
     message(WARNING "Couldn't find vamp")
 endif()
 
-if (NOT NO_RAVE)
+if (NOT NO_ML)
     find_package(Torch REQUIRED)
     include_directories("${TORCH_INCLUDE_DIRS}")
 endif()

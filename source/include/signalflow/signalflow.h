@@ -187,7 +187,9 @@
 /*------------------------------------------------------------------------
  * ML
  *-----------------------------------------------------------------------*/
+#ifdef NO_ML
 #include <signalflow/node/ml/Rave/rave.h>
+#endif
 
 #ifdef __APPLE__
 #include <signalflow/node/fft/convolve.h>

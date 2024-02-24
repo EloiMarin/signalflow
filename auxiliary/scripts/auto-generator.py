@@ -65,6 +65,10 @@ def get_all_source_files() -> list[str]:
     source_files += glob.glob("%s/signalflow/node/*/*/*.h" % header_root)
     source_files = list(filter(lambda path: not "/io/" in path, source_files))
     source_files = list(sorted(source_files, key=lambda path: (os.path.dirname(path), path)))
+
+    if 'NO_ML' in os.environ:
+        source_files = list(filter(lambda path: "/ml/" not in path, source_files))
+
     return source_files
 
 
