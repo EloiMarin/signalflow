@@ -47,9 +47,9 @@ cmake_print_variables(CMAKE_OSX_ARCHITECTURES)
 cmake_print_variables(CMAKE_PREFIX_PATH)
 
 #-------------------------------------------------------------------------------
-# Use C++11
+# Use C++17
 #-------------------------------------------------------------------------------
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_MACOSX_RPATH 1)
 
 #-------------------------------------------------------------------------------
@@ -201,6 +201,10 @@ else()
     message(WARNING "Couldn't find vamp")
 endif()
 
+if (NOT NO_RAVE)
+    find_package(Torch REQUIRED)
+    include_directories("${TORCH_INCLUDE_DIRS}")
+endif()
 
 #-------------------------------------------------------------------------------
 # Specify additional linker dependencies
@@ -217,6 +221,10 @@ if (CMAKE_BUILD_PYTHON)
     if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         target_link_libraries(signalflow ${Python3_LIBRARIES})
     endif()
+endif()
+
+if (NOT NO_RAVE)
+    target_link_libraries(signalflow rave)
 endif()
 
 #-------------------------------------------------------------------------------

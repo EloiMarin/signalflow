@@ -69,6 +69,12 @@
 
 ---
 
+## Ml: Rave
+
+- **[Rave](ml/Rave/rave/index.md)**: Rave model generator
+
+---
+
 ## Operators
 
 - **[Add](operators/add/index.md)**: Add each sample of a to each sample of b. Can also be written as a + b

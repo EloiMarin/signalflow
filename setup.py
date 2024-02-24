@@ -30,7 +30,9 @@ class CMakeBuild(build_ext):
         cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
                       '-DCMAKE_BUILD_PYTHON=1',
                       '-DCMAKE_BUILD_TYPE=' + cfg,
-                      '-DSIGNALFLOW_VERSION=' + self.distribution.get_version()]
+                      '-DCMAKE_EXPORT_COMPILE_COMMANDS=1',
+                      '-DSIGNALFLOW_VERSION=' + self.distribution.get_version(),
+                      '-DCMAKE_PREFIX_PATH=/home/emg/env/timbre-tools/hello-world/libtorch/lib/libtorch/']
         if 'CMAKE_OSX_ARCHITECTURES' in os.environ:
             cmake_args += ['-DCMAKE_OSX_ARCHITECTURES=%s' % os.environ['CMAKE_OSX_ARCHITECTURES']]
 

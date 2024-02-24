@@ -184,6 +184,11 @@
 #include <signalflow/node/fft/phase-vocoder.h>
 #include <signalflow/node/fft/tonality.h>
 
+/*------------------------------------------------------------------------
+ * ML
+ *-----------------------------------------------------------------------*/
+#include <signalflow/node/ml/Rave/rave.h>
+
 #ifdef __APPLE__
 #include <signalflow/node/fft/convolve.h>
 #endif

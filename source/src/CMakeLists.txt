@@ -137,6 +137,10 @@ set(SRC ${SRC}
         ${CMAKE_CURRENT_SOURCE_DIR}/patch/patch-spec.cpp
         )
 
+if (NOT DEFINED NO_RAVE)
+    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/node/ml/Rave")
+endif ()
+
 if (CMAKE_BUILD_PYTHON)
     set(SRC ${SRC}
             ${CMAKE_CURRENT_SOURCE_DIR}/python/python.cpp
