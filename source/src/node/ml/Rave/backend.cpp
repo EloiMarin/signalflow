@@ -59,7 +59,6 @@ void Backend::perform(
     // std::cout << std::endl;
 
     // SEND TENSOR TO DEVICE
-    std::unique_lock<std::mutex> model_lock(m_model_mutex);
     cat_tensor_in = cat_tensor_in.to(m_device);
     std::vector<torch::jit::IValue> inputs = {cat_tensor_in};
 
@@ -73,7 +72,6 @@ void Backend::perform(
         std::cerr << e.what() << '\n';
         return;
     }
-    model_lock.unlock();
 
     int out_batches(tensor_out.size(0)), out_channels(tensor_out.size(1)),
             out_n_vec(tensor_out.size(2));
@@ -112,10 +110,7 @@ int Backend::load(std::string path) {
         model.eval();
         model.to(m_device);
 
-        std::unique_lock<std::mutex> model_lock(m_model_mutex);
         m_model = model;
-        m_loaded = 1;
-        model_lock.unlock();
 
         m_available_methods = get_available_methods();
         m_path = path;
@@ -132,7 +127,6 @@ int Backend::reload() {
 }
 
 bool Backend::has_method(std::string method_name) {
-    std::unique_lock<std::mutex> model_lock(m_model_mutex);
     for (const auto &m : m_model.get_methods()) {
         if (m.name() == method_name)
             return true;
@@ -153,16 +147,13 @@ std::vector<std::string> Backend::get_available_methods() {
     try {
         std::vector<c10::IValue> dumb_input = {};
 
-        std::unique_lock<std::mutex> model_lock(m_model_mutex);
         auto methods_from_model =
             m_model.get_method("get_methods")(dumb_input).toList();
-        model_lock.unlock();
 
         for (size_t i = 0; i < methods_from_model.size(); i++) {
             methods.push_back(methods_from_model.get(i).toStringRef());
         }
     } catch (...) {
-        std::unique_lock<std::mutex> model_lock(m_model_mutex);
         for (const auto &m : m_model.get_methods()) {
             try {
                 auto method_params = m_model.attr(m.name() + "_params");
@@ -170,14 +161,12 @@ std::vector<std::string> Backend::get_available_methods() {
             } catch (...) {
             }
         }
-        model_lock.unlock();
     }
     return methods;
 }
 
 std::vector<std::string> Backend::get_available_attributes() {
     std::vector<std::string> attributes;
-    std::unique_lock<std::mutex> model_lock(m_model_mutex);
     for (const auto &attribute : m_model.named_attributes())
         attributes.push_back(attribute.name);
     return attributes;
@@ -187,15 +176,12 @@ std::vector<std::string> Backend::get_settable_attributes() {
     std::vector<std::string> attributes;
     try {
         std::vector<c10::IValue> dumb_input = {};
-        std::unique_lock<std::mutex> model_lock(m_model_mutex);
         auto methods_from_model =
                 m_model.get_method("get_attributes")(dumb_input).toList();
-        model_lock.unlock();
         for (size_t i = 0; i < methods_from_model.size(); i++) {
             attributes.push_back(methods_from_model.get(i).toStringRef());
         }
     } catch (...) {
-        std::unique_lock<std::mutex> model_lock(m_model_mutex);
         for (const auto &a : m_model.named_attributes()) {
             try {
                 auto method_params = m_model.attr(a.name + "_params");
@@ -203,7 +189,6 @@ std::vector<std::string> Backend::get_settable_attributes() {
             } catch (...) {
             }
         }
-        model_lock.unlock();
     }
     return attributes;
 }
@@ -211,32 +196,24 @@ std::vector<std::string> Backend::get_settable_attributes() {
 std::vector<c10::IValue> Backend::get_attribute(std::string attribute_name) {
     std::string attribute_getter_name = "get_" + attribute_name;
     try {
-        std::unique_lock<std::mutex> model_lock(m_model_mutex);
         auto attribute_getter = m_model.get_method(attribute_getter_name);
-        model_lock.unlock();
     } catch (...) {
         throw "getter for attribute " + attribute_name + " not found in model";
     }
     std::vector<c10::IValue> getter_inputs = {}, attributes;
     try {
         try {
-            std::unique_lock<std::mutex> model_lock(m_model_mutex);
             attributes = m_model.get_method(attribute_getter_name)(getter_inputs)
                                              .toList()
                                              .vec();
-            model_lock.unlock();
         } catch (...) {
-            std::unique_lock<std::mutex> model_lock(m_model_mutex);
             auto output_tuple =
                     m_model.get_method(attribute_getter_name)(getter_inputs).toTuple();
             attributes = (*output_tuple.get()).elements();
-            model_lock.unlock();
         }
     } catch (...) {
-        std::unique_lock<std::mutex> model_lock(m_model_mutex);
         attributes.push_back(
                 m_model.get_method(attribute_getter_name)(getter_inputs));
-        model_lock.unlock();
     }
     return attributes;
 }
@@ -246,9 +223,7 @@ std::string Backend::get_attribute_as_string(std::string attribute_name) {
     // finstringd arguments
     torch::Tensor setter_params;
     try {
-        std::unique_lock<std::mutex> model_lock(m_model_mutex);
         setter_params = m_model.attr(attribute_name + "_params").toTensor();
-        model_lock.unlock();
     } catch (...) {
         throw "parameters to set attribute " + attribute_name +
                 " not found in model";
@@ -294,18 +269,14 @@ void Backend::set_attribute(std::string attribute_name, std::vector<std::string>
     // find setter
     std::string attribute_setter_name = "set_" + attribute_name;
     try {
-        std::unique_lock<std::mutex> model_lock(m_model_mutex);
         auto attribute_setter = m_model.get_method(attribute_setter_name);
-        model_lock.unlock();
     } catch (...) {
         throw "setter for attribute " + attribute_name + " not found in model";
     }
     // find arguments
     torch::Tensor setter_params;
     try {
-        std::unique_lock<std::mutex> model_lock(m_model_mutex);
         setter_params = m_model.attr(attribute_name + "_params").toTensor();
-        model_lock.unlock();
     } catch (...) {
         throw "parameters to set attribute " + attribute_name +
                 " not found in model";
@@ -338,9 +309,7 @@ void Backend::set_attribute(std::string attribute_name, std::vector<std::string>
         }
     }
     try {
-        std::unique_lock<std::mutex> model_lock(m_model_mutex);
         auto setter_out = m_model.get_method(attribute_setter_name)(setter_inputs);
-        model_lock.unlock();
         int setter_result = setter_out.toInt();
         if (setter_result != 0) {
             throw "setter returned -1";
@@ -361,9 +330,7 @@ std::vector<int> Backend::get_method_params(std::string method) {
         ) != m_available_methods.end()
     ) {
         try {
-            std::unique_lock<std::mutex> model_lock(m_model_mutex);
             auto p = m_model.attr(method + "_params").toTensor();
-            model_lock.unlock();
             for (int i(0); i < 4; i++)
                 params.push_back(p[i].item().to<int>());
         } catch (...) {
@@ -387,7 +354,6 @@ int Backend::get_higher_ratio() {
 bool Backend::is_loaded() { return m_loaded; }
 
 void Backend::use_gpu(bool value) {
-    std::unique_lock<std::mutex> model_lock(m_model_mutex);
     if (value) {
         if (torch::hasCUDA()) {
             std::cout << "sending model to cuda" << std::endl;

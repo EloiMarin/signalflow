@@ -1,5 +1,4 @@
 #pragma once
-#include <mutex>
 #include <string>
 #include <torch/script.h>
 #include <torch/torch.h>
