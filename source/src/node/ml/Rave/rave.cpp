@@ -13,7 +13,7 @@ namespace signalflow
 {
 
 Rave::Rave(std::string path, std::string method, int buffer_size)
-    : m_path(path), m_method(method), m_buffer_size(buffer_size)
+    : m_buffer_size(buffer_size)
 {
     SIGNALFLOW_CHECK_GRAPH();
 
@@ -28,7 +28,7 @@ Rave::Rave(std::string path, std::string method, int buffer_size)
     // TODO Create inputs
     // this->create_input("path", this->path);
 
-    if (this->load_model(path)) {
+    if (this->load_model(path, method)) {
         this->alloc();
 
         // HACK1 BEGINS
@@ -71,27 +71,28 @@ Rave::Rave(std::string path, std::string method, int buffer_size)
     }
 }
 
-bool Rave::load_model(std::string path) {
+bool Rave::load_model(std::string path, std::string method) {
     try {
         std::string loading_message = "[Rave] Loading: ";
         loading_message += path;
         signalflow_debug(loading_message.c_str());
-        if (m_model->load(path) != 0) {
+
+        int load_result = m_model->load(path, method);
+
+        if (load_result == -1) {
             signalflow_warn("[Rave] Could not load model");
             return false;
-        } else {
-            signalflow_debug("[Rave] model loaded");
+        } else if (load_result == 1) {
+            std::stringstream warning_message;
+            warning_message << "[Rave] Method does not exist in model: " << method;
+            signalflow_warn(warning_message.str().c_str());
+            return false;
         }
+        signalflow_debug("[Rave] Model loaded");
 
         // GET MODEL'S METHOD PARAMETERS
-        auto params = m_model->get_method_params(m_method);
+        auto params = m_model->get_method_params(method);
         settable_attributes = m_model->get_settable_attributes();
-
-        if (!params.size()) {
-            signalflow_warn("[Rave] method not found, using forward instead");
-            m_method = "forward";
-            params = m_model->get_method_params(m_method);
-        }
 
         m_in_dim = params[0];
         m_in_ratio = params[1];
@@ -191,7 +192,7 @@ void Rave::model_perform() {
     for (int c(0); c < m_out_dim; c++)
         out_model.push_back(m_out_model[c].get());
 
-    m_model->perform(in_model, out_model, m_buffer_size, m_method, 1);
+    m_model->perform(in_model, out_model, m_buffer_size, 1);
 }
 
 /* TODO Set model attributes

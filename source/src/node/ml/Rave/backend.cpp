@@ -22,24 +22,16 @@ void Backend::perform(
     std::vector<float *> in_buffer,
     std::vector<float *> out_buffer,
     int n_vec,
-    std::string method, int n_batches
+    int n_batches
 ) {
+    if (!m_loaded) return;
+
     c10::InferenceMode guard;
 
-    auto params = get_method_params(method);
-    // std::cout << "in_buffer length : " << in_buffer.size() << std::endl;
-    // std::cout << "out_buffer length : " << out_buffer.size() << std::endl;
-
-    if (!params.size())
-        return;
-
-    auto in_dim = params[0];
-    auto in_ratio = params[1];
-    auto out_dim = params[2];
-    auto out_ratio = params[3];
-
-    if (!m_loaded)
-        return;
+    auto in_dim = m_method_params[m_method][0];
+    auto in_ratio = m_method_params[m_method][1];
+    auto out_dim = m_method_params[m_method][2];
+    auto out_ratio = m_method_params[m_method][3];
 
     // COPY BUFFER INTO A TENSOR
     std::vector<at::Tensor> tensor_in;
@@ -65,7 +57,7 @@ void Backend::perform(
     // PROCESS TENSOR
     at::Tensor tensor_out;
     try {
-        tensor_out = m_model.get_method(method)(inputs).toTensor();
+        tensor_out = m_model.get_method(m_method)(inputs).toTensor();
         tensor_out = tensor_out.repeat_interleave(out_ratio).reshape(
                 {n_batches, out_dim, -1});
     } catch (const std::exception &e) {
@@ -104,7 +96,7 @@ void Backend::perform(
     }
 }
 
-int Backend::load(std::string path) {
+int Backend::load(std::string path, std::string method) {
     try {
         auto model = torch::jit::load(path);
         model.eval();
@@ -113,16 +105,30 @@ int Backend::load(std::string path) {
         m_model = model;
 
         m_available_methods = get_available_methods();
+        bool method_exists = std::find(
+            m_available_methods.begin(),
+            m_available_methods.end(),
+            method
+        ) != m_available_methods.end();
+        if (!method_exists)
+            return 1;
+
         m_path = path;
+        m_method = method;
+
+        fetch_all_method_params();
+
+        m_loaded = 1;
+
         return 0;
     } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
-        return 1;
+        return -1;
     }
 }
 
 int Backend::reload() {
-    auto return_code = load(m_path);
+    auto return_code = load(m_path, m_method);
     return return_code;
 }
 
@@ -319,24 +325,31 @@ void Backend::set_attribute(std::string attribute_name, std::vector<std::string>
     }
 }
 
-std::vector<int> Backend::get_method_params(std::string method) {
-    std::vector<int> params;
+std::array<int, 4> Backend::get_method_params(std::string method) {
+    std::array<int, 4> params;
 
-    if (
-        std::find(
-            m_available_methods.begin(),
-            m_available_methods.end(),
-            method
-        ) != m_available_methods.end()
-    ) {
+    bool method_exists = std::find(
+        m_available_methods.begin(),
+        m_available_methods.end(),
+        method
+    ) != m_available_methods.end();
+
+    if (method_exists) {
         try {
             auto p = m_model.attr(method + "_params").toTensor();
-            for (int i(0); i < 4; i++)
-                params.push_back(p[i].item().to<int>());
+
+            for (int i(0); i < 4; i++) params[i] = p[i].item().to<int>();
         } catch (...) {
         }
     }
     return params;
+}
+
+void Backend::fetch_all_method_params() {
+    m_method_params.insert({ "encode", get_method_params("encode") });
+    m_method_params.insert({ "decode", get_method_params("decode") });
+    m_method_params.insert({ "forward", get_method_params("forward") });
+    m_method_params.insert({ "prior", get_method_params("prior") });
 }
 
 int Backend::get_higher_ratio() {

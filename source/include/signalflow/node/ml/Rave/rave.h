@@ -24,7 +24,7 @@ public:
     virtual void process(Buffer &out, int num_frames) override;
 
 private:
-    bool load_model(std::string path);
+    bool load_model(std::string path, std::string method);
     void model_perform();
 
     bool m_enabled = false;
@@ -32,8 +32,6 @@ private:
     // BACKEND RELATED MEMBERS
     std::unique_ptr<::nn_tilde::Backend> m_model;
     std::vector<std::string> settable_attributes;
-    std::string m_path;
-    std::string m_method;
 
     // BUFFER RELATED MEMBERS
     int m_in_dim, m_in_ratio, m_out_dim, m_out_ratio, m_buffer_size;

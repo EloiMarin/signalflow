@@ -3,19 +3,11 @@
 #include <torch/script.h>
 #include <torch/torch.h>
 #include <vector>
+#include <map>
 
 namespace nn_tilde {
 
 class Backend {
-protected:
-    torch::jit::script::Module m_model;
-    int m_loaded;
-    std::string m_path;
-    std::mutex m_model_mutex;
-    std::vector<std::string> m_available_methods;
-    c10::DeviceType m_device;
-    bool m_use_gpu;
-
 public:
     Backend();
 
@@ -23,7 +15,6 @@ public:
         std::vector<float *> in_buffer,
         std::vector<float *> out_buffer,
         int n_vec,
-        std::string method,
         int n_batches
     );
     bool has_method(std::string method_name);
@@ -38,13 +29,25 @@ public:
         std::vector<std::string> attribute_args
     );
 
-    std::vector<int> get_method_params(std::string method);
     int get_higher_ratio();
-    int load(std::string path);
+    int load(std::string path, std::string method);
     int reload();
     bool is_loaded();
     torch::jit::script::Module get_model() { return m_model; }
     void use_gpu(bool value);
+
+    std::array<int, 4> get_method_params(std::string method);
+    void fetch_all_method_params();
+    std::map<std::string, std::array<int, 4>> m_method_params;
+
+private:
+    torch::jit::script::Module m_model;
+    int m_loaded;
+    std::string m_path;
+    std::vector<std::string> m_available_methods;
+    c10::DeviceType m_device;
+    bool m_use_gpu;
+    std::string m_method;
 };
 
 }
