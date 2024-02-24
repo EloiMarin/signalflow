@@ -201,7 +201,7 @@ else()
     message(WARNING "Couldn't find vamp")
 endif()
 
-if (NOT NO_ML)
+if (NOT DEFINED NO_ML)
     find_package(Torch REQUIRED)
     include_directories("${TORCH_INCLUDE_DIRS}")
 endif()
@@ -223,7 +223,7 @@ if (CMAKE_BUILD_PYTHON)
     endif()
 endif()
 
-if (NOT NO_RAVE)
+if (NOT DEFINED NO_ML)
     target_link_libraries(signalflow rave)
 endif()
 
