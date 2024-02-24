@@ -36,8 +36,12 @@ void Backend::perform(
     // COPY BUFFER INTO A TENSOR
     std::vector<at::Tensor> tensor_in;
     // for (auto buf : in_buffer)
-    for (size_t i = 0; i < in_buffer.size(); i++) {
-        tensor_in.push_back(torch::from_blob(in_buffer[i], {1, 1, n_vec}));
+    for (
+        size_t input_dimension = 0;
+        input_dimension < in_buffer.size();
+        input_dimension++
+    ) {
+        tensor_in.push_back(torch::from_blob(in_buffer[input_dimension], {1, 1, n_vec}));
         // std::cout << i << " : " << tensor_in[i].min().item<float>() << std::endl;
     }
 

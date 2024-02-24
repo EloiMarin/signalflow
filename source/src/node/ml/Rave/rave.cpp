@@ -104,11 +104,11 @@ bool Rave::load_model(std::string path, std::string method) {
         if (!m_buffer_size) {
             m_buffer_size = higher_ratio;
         } else if (m_buffer_size < higher_ratio) {
-            m_buffer_size = higher_ratio;
+            std::stringstream warning_message;
+            warning_message << "[Rave] Buffer size " << m_buffer_size << " is too small, switching to " << higher_ratio;
+            signalflow_warn(warning_message.str().c_str());
 
-            std::string err_message = "[Rave] buffer size too small, switching to ";
-            err_message += std::to_string(higher_ratio);
-            signalflow_warn(err_message.c_str());
+            m_buffer_size = higher_ratio;
         } else {
             m_buffer_size = power_ceil(m_buffer_size);
         }
@@ -124,20 +124,22 @@ void Rave::alloc()
     input_values_mock = std::vector<float>(m_buffer_size, 0.0f);
     m_in_buffer = std::make_unique<::nn_tilde::circular_buffer<float, float>[]>(m_in_dim);
 
+    m_in_model = std::vector<std::unique_ptr<float[]>>(m_in_dim);
     for (int in_dimension = 0; in_dimension < m_in_dim; in_dimension++) {
         if (in_dimension < m_in_dim - 1) { // Is this check related to some Pd shenanigan? Remove if so
             // TODO Create input signal inlets for each of the input dimensions
             //this->create_input("path", this->path);
         }
         m_in_buffer[in_dimension].initialize(m_buffer_size);
-        m_in_model.push_back(std::make_unique<float[]>(m_buffer_size));
+        m_in_model[in_dimension] = std::make_unique<float[]>(m_buffer_size);
     }
 
     // TODO Use this->num_output_channels and handle when the model has different output dimensions than the Node's number of output channels
     m_out_buffer = std::make_unique<::nn_tilde::circular_buffer<float, float>[]>(m_out_dim);
-    for (int i(0); i < m_out_dim; i++) {
-        m_out_buffer[i].initialize(m_buffer_size);
-        m_out_model.push_back(std::make_unique<float[]>(m_buffer_size));
+    m_out_model = std::vector<std::unique_ptr<float[]>>(m_out_dim);
+    for (int out_dimension = 0; out_dimension < m_out_dim; out_dimension++) {
+        m_out_buffer[out_dimension].initialize(m_buffer_size);
+        m_out_model[out_dimension] = std::make_unique<float[]>(m_buffer_size);
     }
 }
 
@@ -185,12 +187,13 @@ void Rave::process(Buffer &out, int num_frames)
 }
 
 void Rave::model_perform() {
-    std::vector<float *> in_model, out_model;
+    std::vector<float *> in_model(m_in_dim);
+    for (int in_dimension = 0; in_dimension < m_in_dim; in_dimension++)
+        in_model[in_dimension] = m_in_model[in_dimension].get();
 
-    for (int c(0); c < m_in_dim; c++)
-        in_model.push_back(m_in_model[c].get());
-    for (int c(0); c < m_out_dim; c++)
-        out_model.push_back(m_out_model[c].get());
+    std::vector<float *> out_model(m_out_dim);
+    for (int out_dimension = 0; out_dimension < m_out_dim; out_dimension++)
+        out_model[out_dimension] = m_out_model[out_dimension].get();
 
     m_model->perform(in_model, out_model, m_buffer_size, 1);
 }

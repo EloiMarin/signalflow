@@ -48,6 +48,8 @@ private:
     c10::DeviceType m_device;
     bool m_use_gpu;
     std::string m_method;
+
+    // TODO Avoid allocating vector in audio thread: std::vector<at::Tensor> input_tensors;
 };
 
 }
