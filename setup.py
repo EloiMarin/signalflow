@@ -31,11 +31,10 @@ class CMakeBuild(build_ext):
                       '-DCMAKE_BUILD_PYTHON=1',
                       '-DCMAKE_BUILD_TYPE=' + cfg,
                       '-DCMAKE_EXPORT_COMPILE_COMMANDS=1',
-                      '-DSIGNALFLOW_VERSION=' + self.distribution.get_version(),
-                      '-DCMAKE_PREFIX_PATH=/home/emg/env/timbre-tools/hello-world/libtorch/lib/libtorch/']
+                      '-DSIGNALFLOW_VERSION=' + self.distribution.get_version()]
 
         if 'NO_ML' in os.environ:
-            cmake_args.append('-DNO_ML=1')
+            cmake_args.append('-DNO_ML=')
 
         if 'CMAKE_OSX_ARCHITECTURES' in os.environ:
             cmake_args += ['-DCMAKE_OSX_ARCHITECTURES=%s' % os.environ['CMAKE_OSX_ARCHITECTURES']]
@@ -44,7 +43,7 @@ class CMakeBuild(build_ext):
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
         subprocess.check_call(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
-        subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
+        subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp, env=env)
 
         # --------------------------------------------------------------------------------
         # On Windows, bundle the .pyd into a package.

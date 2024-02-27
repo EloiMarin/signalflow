@@ -202,8 +202,38 @@ else()
 endif()
 
 if (NOT DEFINED NO_ML)
+    # Use python to find libtorch
+    find_package(Python COMPONENTS Interpreter REQUIRED)
+    execute_process(COMMAND
+        ${Python3_EXECUTABLE} -c "import torch; print(torch.utils.cmake_prefix_path)"
+        OUTPUT_VARIABLE TORCH_PREFIX_PATH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    list(APPEND CMAKE_PREFIX_PATH
+        "${TORCH_PREFIX_PATH}"
+    )
+
     find_package(Torch REQUIRED)
-    include_directories("${TORCH_INCLUDE_DIRS}")
+
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS} -fvisibility=hidden")
+    target_link_libraries(signalflow "${TORCH_LIBRARIES}")
+
+    if (MSVC)
+        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+        set(CMAKE_CXX_FLAGS_MINSIZEREL  "${CMAKE_CXX_FLAGS_MINSIZEREL} /MT")
+        set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /MT")
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MT")
+
+        # The following code block is suggested to be used on Windows.
+        # According to https://github.com/pytorch/pytorch/issues/25457,
+        # the DLLs need to be copied to avoid memory errors.
+        file(GLOB TORCH_DLLS "${TORCH_INSTALL_PREFIX}/lib/*.dll")
+        add_custom_command(TARGET signalflow
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${TORCH_DLLS}
+            $<TARGET_FILE_DIR:signalflow>)
+    endif (MSVC)
 endif()
 
 #-------------------------------------------------------------------------------
@@ -221,10 +251,6 @@ if (CMAKE_BUILD_PYTHON)
     if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         target_link_libraries(signalflow ${Python3_LIBRARIES})
     endif()
-endif()
-
-if (NOT DEFINED NO_ML)
-    target_link_libraries(signalflow rave)
 endif()
 
 #-------------------------------------------------------------------------------

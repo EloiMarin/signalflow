@@ -138,7 +138,11 @@ set(SRC ${SRC}
         )
 
 if (NOT DEFINED NO_ML)
-    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/node/ml/Rave")
+    set(SRC ${SRC}
+            ${CMAKE_CURRENT_SOURCE_DIR}/node/ml/Rave/backend.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/node/ml/Rave/rave.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/node/ml/Rave/utils.cpp
+            )
 endif ()
 
 if (CMAKE_BUILD_PYTHON)
