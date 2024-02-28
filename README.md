@@ -87,6 +87,14 @@ The following Node classes are currently included with the base distribution:
 | **Sequencing** | [ClockDivider](https://signalflow.dev/library/sequencing/clockdivider/), [Counter](https://signalflow.dev/library/sequencing/counter/), [Euclidean](https://signalflow.dev/library/sequencing/euclidean/), [FlipFlop](https://signalflow.dev/library/sequencing/flipflop/), [ImpulseSequence](https://signalflow.dev/library/sequencing/impulsesequence/), [Index](https://signalflow.dev/library/sequencing/index/), [Latch](https://signalflow.dev/library/sequencing/latch/), [Sequence](https://signalflow.dev/library/sequencing/sequence/) |
 | **Stochastic** | [Logistic](https://signalflow.dev/library/stochastic/logistic/), [PinkNoise](https://signalflow.dev/library/stochastic/pinknoise/), [RandomBrownian](https://signalflow.dev/library/stochastic/randombrownian/), [RandomChoice](https://signalflow.dev/library/stochastic/randomchoice/), [RandomCoin](https://signalflow.dev/library/stochastic/randomcoin/), [RandomExponentialDist](https://signalflow.dev/library/stochastic/randomexponentialdist/), [RandomExponential](https://signalflow.dev/library/stochastic/randomexponential/), [RandomGaussian](https://signalflow.dev/library/stochastic/randomgaussian/), [RandomImpulseSequence](https://signalflow.dev/library/stochastic/randomimpulsesequence/), [RandomImpulse](https://signalflow.dev/library/stochastic/randomimpulse/), [RandomUniform](https://signalflow.dev/library/stochastic/randomuniform/), [StochasticNode](https://signalflow.dev/library/stochastic/stochasticnode/), [WhiteNoise](https://signalflow.dev/library/stochastic/whitenoise/) |
 
+## ML
+
+- Download the **cxx11 ABI** [libtorch](https://pytorch.org/get-started/locally/) package, unzip it, and set the `libtorch_path` variable in the `setup.py` file
+    - Currently, libtorch packages (distributed by Ubuntu's apt, pip and conda) are compiled with the [old ABI compatibility](https://gcc.gnu.org/onlinedocs/libstdc++/manual/using_dual_abi.html), which won't link with other SignalFlow dependencies like Vamp. That's why we ask you to download the package manually.
+    - Still beware that if you import this build of SignalFlow in a Python script that _also_ `import torch` directly (installed with conda/pip/apt/...), the script will crash due to undefined symbols.
+- It can be disabled with `NO_ML=1 python3 setup.py ...`. The following nodes will be missing:
+    - Rave
+
 ## Contributors
 
 Thanks to the following contributors:

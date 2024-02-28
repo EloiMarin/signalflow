@@ -201,6 +201,7 @@ else()
     message(WARNING "Couldn't find vamp")
 endif()
 
+set(ignoreMe ${NO_ML}) # Suppress warning, https://stackoverflow.com/a/36452112/8899477
 if (NOT DEFINED NO_ML)
     # Use python to find libtorch
     find_package(Python COMPONENTS Interpreter REQUIRED)
@@ -208,10 +209,10 @@ if (NOT DEFINED NO_ML)
         ${Python3_EXECUTABLE} -c "import torch; print(torch.utils.cmake_prefix_path)"
         OUTPUT_VARIABLE TORCH_PREFIX_PATH
         OUTPUT_STRIP_TRAILING_WHITESPACE
+        OUTPUT_QUIET
+        ERROR_QUIET
     )
-    list(APPEND CMAKE_PREFIX_PATH
-        "${TORCH_PREFIX_PATH}"
-    )
+    list(APPEND CMAKE_PREFIX_PATH "${TORCH_PREFIX_PATH}")
 
     find_package(Torch REQUIRED)
 

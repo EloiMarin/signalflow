@@ -6,6 +6,7 @@ import subprocess
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
 
+libtorch_path = '' # Set the path to your libtorch library (https://pytorch.org/get-started/locally/)
 
 class CMakeExtension(Extension):
     def __init__(self, name, sourcedir=''):
@@ -34,7 +35,10 @@ class CMakeBuild(build_ext):
                       '-DSIGNALFLOW_VERSION=' + self.distribution.get_version()]
 
         if 'NO_ML' in os.environ:
-            cmake_args.append('-DNO_ML=')
+            cmake_args.append('-DNO_ML=1')
+        else:
+            if (len(libtorch_path) > 0):
+                cmake_args.append(f'-DCMAKE_PREFIX_PATH={libtorch_path}/share/cmake')
 
         if 'CMAKE_OSX_ARCHITECTURES' in os.environ:
             cmake_args += ['-DCMAKE_OSX_ARCHITECTURES=%s' % os.environ['CMAKE_OSX_ARCHITECTURES']]
